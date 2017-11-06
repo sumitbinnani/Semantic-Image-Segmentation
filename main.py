@@ -55,8 +55,24 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :param num_classes: Number of classes to classify
     :return: The Tensor for the last layer of output
     """
-    # TODO: Implement function
-    return None
+    fcn_layer_7 = tf.layers.conv2d(vgg_layer7_out, num_classes,  kernel_size=1, strides=(1,1), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01), name='fcn_layer_7')
+    
+    fcn_dconv_7 = tf.layers.conv2d_transpose(fcn_layer_7, num_classes, kernel_size=4, strides=(2,2), padding='SAME', kernel_initializer=tf.truncated_normal_initializer(stddev=0.01), name='fcn_dconc_7')
+
+    fcn_layer_4 = tf.layers.conv2d(vgg_layer4_out, num_classes, kernel_size=1, strides=(1,1), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01), name='fcn_layer_4')
+
+    skip_layer_4 = tf.add(fcn_dconv_7, fcn_layer_4)
+
+    fcn_dconv_4 =tf.layers.conv2d_transpose(skip_layer_4, num_classes, kernel_size=4, strides=(2,2), padding='SAME', kernel_initializer=tf.truncated_normal_initializer(stddev=0.01), name='fcn_dconv_4')    
+
+    fcn_layer_3 = tf.layers.conv2d(vgg_layer3_out, num_classes, kernel_size=1, strides=(1,1), kernel_initializer=tf.truncated_normal_initializer(stddev=0.01), name='fcn_layer_3')
+
+    skip_layer_3 = tf.add(fcn_dconv_4, fcn_layer_3)
+
+    fcn_dconv_3 =tf.layers.conv2d_transpose(skip_layer_3, num_classes, kernel_size=16, strides=(8,8), padding='SAME', kernel_initializer=tf.truncated_normal_initializer(stddev=0.01), name='fcn_dconv_3')
+
+    return fcn_dconv_3
+
 tests.test_layers(layers)
 
 
