@@ -112,9 +112,16 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param correct_label: TF Placeholder for label images
     :param keep_prob: TF Placeholder for dropout keep probability
     :param learning_rate: TF Placeholder for learning rate
-    """
-    # TODO: Implement function
-    pass
+    """    
+    # Training Loop
+    for epoch in range(epochs):
+        batches = get_batches_fn(batch_size)    
+        for batch_input, batch_label in batches:
+            feed_dict = {input_image: batch_input, correct_label: batch_label, keep_prob: 0.5, learning_rate: 1e-4}
+            _, loss = sess.run([train_op, cross_entropy_loss], feed_dict=feed_dict)
+            
+        print("Epoch: {}/{} | Loss: {}".format(epoch, epochs, loss))
+
 tests.test_train_nn(train_nn)
 
 
@@ -124,6 +131,10 @@ def run():
     data_dir = './data'
     runs_dir = './runs'
     tests.test_for_kitti_dataset(data_dir)
+    
+    # Hyperparameters
+    epochs = 30
+    batch_size = 16
 
     # Download pretrained vgg model
     helper.maybe_download_pretrained_vgg(data_dir)
@@ -140,13 +151,22 @@ def run():
 
         # OPTIONAL: Augment Images for better results
         #  https://datascience.stackexchange.com/questions/5224/how-to-prepare-augment-images-for-neural-network
+        
+        # Creating Placeholders
+        labels = tf.placeholder(tf.int32)
+        learning_rate = tf.placeholder(tf.float32)
 
-        # TODO: Build NN using load_vgg, layers, and optimize function
+        # Build NN using load_vgg, layers, and optimize function
+        input_image, keep_prob, layer3, layer4, layer7 = load_vgg(sess, vgg_path)
+        last_layer = layers(layer3, layer4, layer7, num_classes)
+        logits, train_op, loss = optimize(last_layer, labels, learning_rate, num_classes)
 
-        # TODO: Train NN using the train_nn function
+        # Train NN using the train_nn function
+        sess.run(tf.global_variables_initializer())
+        train_nn(sess, epochs, batch_size, get_batches_fn, train_op, loss, input_image, labels, keep_prob, learning_rate)
 
-        # TODO: Save inference data using helper.save_inference_samples
-        #  helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
+        # Save inference data using helper.save_inference_samples
+        helper.save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image)
 
         # OPTIONAL: Apply the trained model to a video
 
